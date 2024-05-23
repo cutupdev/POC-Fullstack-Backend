@@ -38,6 +38,7 @@ app.use(body_parser_1.default.urlencoded({ limit: '50mb', extended: true }));
 const server = http_1.default.createServer(app);
 // Define routes for different API endpoints
 app.use("/api/users", routes_1.UserRouter);
+app.use("/api/files", routes_1.FileRouter);
 // Define a route to check if the backend server is running
 app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.send("Backend Server is Running now!");

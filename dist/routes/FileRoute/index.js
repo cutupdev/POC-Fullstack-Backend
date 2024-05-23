@@ -23,20 +23,12 @@ const middleware_1 = require("../../middleware");
 const config_1 = require("../../config");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-function validateUsername(username) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const user = yield UserModel_1.default.findOne({ username });
-        if (user)
-            return false;
-        return true;
-    });
-}
 // Create a new instance of the Express Router
-const UserRouter = (0, express_1.Router)();
+const FileRouter = (0, express_1.Router)();
 // @route    GET api/users
 // @desc     Get user by token
 // @access   Private
-UserRouter.get("/", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+FileRouter.get("/", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = yield UserModel_1.default.findById(req.user.id).select([
             "-password",
@@ -51,25 +43,10 @@ UserRouter.get("/", middleware_1.authMiddleware, (req, res) => __awaiter(void 0,
         return res.status(500).send({ error: err });
     }
 }));
-// @route    GET api/users/username
-// @desc     Is username available
-// @access   Public
-UserRouter.get("/username", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { username } = req.query;
-        const isValid = yield validateUsername(username);
-        return res.json({ isValid });
-    }
-    catch (error) {
-        console.error(error);
-        return res.status(500).send({ error });
-    }
-}));
 // @route    POST api/users/signup
 // @desc     Register user
 // @access   Public
-UserRouter.post("/signup", (0, express_validator_1.check)("username", "Username is required").notEmpty(), (0, express_validator_1.check)("email", "Please include a valid email").isEmail(), (0, express_validator_1.check)("password", "Please enter a password with 12 or more characters").isLength({ min: 12 }), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("signup-", req.body);
+FileRouter.post("/signup", (0, express_validator_1.check)("username", "Username is required").notEmpty(), (0, express_validator_1.check)("email", "Please include a valid email").isEmail(), (0, express_validator_1.check)("password", "Please enter a password with 12 or more characters").isLength({ min: 12 }), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const transporter = nodemailer_1.default.createTransport({
             service: process.env.EMAIL_SERVICE,
@@ -154,8 +131,7 @@ UserRouter.post("/signup", (0, express_validator_1.check)("username", "Username 
 // @route    GET api/users/verity/:token
 // @desc     Is user verified
 // @access   Public
-UserRouter.get("/verify/:token", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("verify token-", req.params);
+FileRouter.get("/verify/:token", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { token } = req.params;
         console.log(token);
@@ -184,8 +160,7 @@ UserRouter.get("/verify/:token", (req, res) => __awaiter(void 0, void 0, void 0,
 // @route    Post api/users/forgotPassword
 // @desc     Is user verified
 // @access   Public
-UserRouter.post("/forgotPassword", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("forget password-", req.body);
+FileRouter.post("/forgotPassword", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const email = req.body.email;
         UserModel_1.default.findOne({ email: email })
@@ -254,8 +229,7 @@ UserRouter.post("/forgotPassword", (req, res) => __awaiter(void 0, void 0, void 
 // @route    Post api/users/resetPassword
 // @desc     Is user verified
 // @access   Public
-UserRouter.post("/resetPassword", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("reset password-", req.body);
+FileRouter.post("/resetPassword", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const email = req.body.email;
         const token = req.body.token;
@@ -330,8 +304,8 @@ UserRouter.post("/resetPassword", (req, res) => __awaiter(void 0, void 0, void 0
 // @route    POST api/users/signin
 // @desc     Authenticate user & get token
 // @access   Public
-UserRouter.post("/signin", (0, express_validator_1.check)("email", "Please include a valid email").isEmail(), (0, express_validator_1.check)("password", "Password is required").exists(), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("signin-", req.body);
+FileRouter.post("/signin", (0, express_validator_1.check)("email", "Please include a valid email").isEmail(), (0, express_validator_1.check)("password", "Password is required").exists(), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(req.body);
     const errors = (0, express_validator_1.validationResult)(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ error: errors.array() });
@@ -365,4 +339,4 @@ UserRouter.post("/signin", (0, express_validator_1.check)("email", "Please inclu
         return res.status(500).send({ error: error });
     }
 }));
-exports.default = UserRouter;
+exports.default = FileRouter;
