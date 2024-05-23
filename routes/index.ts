@@ -1,2 +1,4 @@
 import UserRouter from "./UserRoute";
-export { UserRouter }
+import FileRouter from "./FileRoute";
+
+export { UserRouter, FileRouter }

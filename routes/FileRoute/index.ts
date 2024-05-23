@@ -13,19 +13,13 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-async function validateUsername(username: string) {
-  const user = await User.findOne({ username });
-  if (user) return false;
-  return true;
-}
-
 // Create a new instance of the Express Router
-const UserRouter = Router();
+const FileRouter = Router();
 
 // @route    GET api/users
 // @desc     Get user by token
 // @access   Private
-UserRouter.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
+FileRouter.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const user = await User.findById(req.user.id).select([
       "-password",
@@ -41,24 +35,10 @@ UserRouter.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// @route    GET api/users/username
-// @desc     Is username available
-// @access   Public
-UserRouter.get("/username", async (req, res) => {
-  try {
-    const { username } = req.query;
-    const isValid = await validateUsername(username as string);
-    return res.json({ isValid });
-  } catch (error: any) {
-    console.error(error);
-    return res.status(500).send({ error });
-  }
-});
-
 // @route    POST api/users/signup
 // @desc     Register user
 // @access   Public
-UserRouter.post(
+FileRouter.post(
   "/signup",
   check("username", "Username is required").notEmpty(),
   check("email", "Please include a valid email").isEmail(),
@@ -67,7 +47,6 @@ UserRouter.post(
     "Please enter a password with 12 or more characters"
   ).isLength({ min: 12 }),
   async (req: Request, res: Response) => {
-    console.log("signup-", req.body);
     try {
       const transporter = nodemailer.createTransport({
         service: process.env.EMAIL_SERVICE,
@@ -173,8 +152,7 @@ UserRouter.post(
 // @route    GET api/users/verity/:token
 // @desc     Is user verified
 // @access   Public
-UserRouter.get("/verify/:token", async (req, res) => {
-  console.log("verify token-", req.params);
+FileRouter.get("/verify/:token", async (req, res) => {
   try {
     const { token } = req.params;
     console.log(token);
@@ -203,8 +181,7 @@ UserRouter.get("/verify/:token", async (req, res) => {
 // @route    Post api/users/forgotPassword
 // @desc     Is user verified
 // @access   Public
-UserRouter.post("/forgotPassword", async (req, res) => {
-  console.log("forget password-", req.body);
+FileRouter.post("/forgotPassword", async (req, res) => {
   try {
     const email = req.body.email;
 
@@ -287,8 +264,7 @@ UserRouter.post("/forgotPassword", async (req, res) => {
 // @route    Post api/users/resetPassword
 // @desc     Is user verified
 // @access   Public
-UserRouter.post("/resetPassword", async (req, res) => {
-  console.log("reset password-", req.body);
+FileRouter.post("/resetPassword", async (req, res) => {
   try {
     const email = req.body.email;
     const token = req.body.token;
@@ -365,12 +341,12 @@ UserRouter.post("/resetPassword", async (req, res) => {
 // @route    POST api/users/signin
 // @desc     Authenticate user & get token
 // @access   Public
-UserRouter.post(
+FileRouter.post(
   "/signin",
   check("email", "Please include a valid email").isEmail(),
   check("password", "Password is required").exists(),
   async (req, res) => {
-    console.log("signin-", req.body);
+    console.log(req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ error: errors.array() });
@@ -411,4 +387,4 @@ UserRouter.post(
   }
 );
 
-export default UserRouter;
+export default FileRouter;
