@@ -13,6 +13,7 @@ catch (error) {
     console.error("Error loading environment variables:", error);
     process.exit(1);
 }
-exports.MONGO_URL = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}/${process.env.DB_NAME}`;
-exports.PORT = process.env.PORT || 9000;
+// export const MONGO_URL = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}/${process.env.DB_NAME}`;
+exports.MONGO_URL = process.env.DB_URL;
+exports.PORT = process.env.PORT || 5000;
 exports.JWT_SECRET = process.env.JWT_SECRET || "JWT_SECRET";
