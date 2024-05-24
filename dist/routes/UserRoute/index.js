@@ -95,13 +95,51 @@ UserRouter.post("/signup", (0, express_validator_1.check)("username", "Username 
             // Subject of Email
             subject: "Email Verification",
             // This would be the text of email body
-            text: `Hi there, you have recently entered your 
-        email on our website. 
-    
-        Please follow the given link to verify your email 
-        https://poc-fullstack-frontend.vercel.app/verify/${tokenMail} 
-    
-        Thanks`,
+            html: `<!doctype html>
+        <html>
+        
+        <head>
+          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        </head>
+        
+        <body style="font-family: sans-serif;">
+          <div style="display: block; margin: auto; max-width: 600px;" class="main">
+            <div style="display: flex; justify-content: center;">
+              <h1 style="font-size: 20px; font-weight: bold; margin-top: 20px">Email Verification</h1>
+            </div>
+            <p>We received your request to reset your account password.</p>
+            <p>Click the link below to create your new password. Your password will not be reset if no action is taken and your
+              old password will continue to work</p>
+            <div style="display: flex; justify-content: center;">
+              <a href="https://poc-fullstack-frontend.vercel.app/verify/${tokenMail}" target="_blank">Verify</a>
+            </div>
+          </div>
+          
+          <style>
+            .main {
+              background-color: white;
+            }
+        
+            a:link,
+            a:visited {
+              background-color: #008800;
+              margin-top: 30px;
+              width: 70px;
+              color: white;
+              padding: 14px 25px;
+              text-align: center;
+              text-decoration: none;
+              display: inline-block;
+            }
+        
+            a:hover,
+            a:active {
+              background-color: green;
+            }
+          </style>
+        </body>
+        
+        </html>`,
         };
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
@@ -215,12 +253,50 @@ UserRouter.post("/forgotPassword", (req, res) => __awaiter(void 0, void 0, void 
                     // Subject of Email
                     subject: "Reset Password",
                     // This would be the text of email body
-                    text: `Hi there, you want to reset your password. 
-        
-            Please follow the given link to verify your email 
-            https://poc-fullstack-frontend.vercel.app/${email}/reset-password/${tokenMail} 
-        
-            Thanks`,
+                    text: `<!doctype html>
+            <html>
+            
+            <head>
+              <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+            </head>
+            
+            <body style="font-family: sans-serif;">
+              <div style="display: block; margin: auto; max-width: 600px;" class="main">
+                <div style="display: flex; justify-content: center;">
+                  <h1 style="font-size: 20px; font-weight: bold; margin-top: 20px">Email Verification</h1>
+                </div>
+                <p>You have created an account on our system. Please verify your account by clicking the button below. You must
+                  verify the email address to use your account.</p>
+                <div style="display: flex; justify-content: center;">
+                  <a href="https://4a29-45-8-22-59.ngrok-free.app/${email}/reset-password/${tokenMail}" target="_blank">Verify</a>
+                </div>
+              </div>
+              
+              <style>
+                .main {
+                  background-color: white;
+                }
+            
+                a:link,
+                a:visited {
+                  background-color: #008800;
+                  margin-top: 30px;
+                  width: 70px;
+                  color: white;
+                  padding: 14px 25px;
+                  text-align: center;
+                  text-decoration: none;
+                  display: inline-block;
+                }
+            
+                a:hover,
+                a:active {
+                  background-color: green;
+                }
+              </style>
+            </body>
+            
+            </html>`,
                 };
                 transporter.sendMail(mailConfigurations, function (error, info) {
                     if (error) {
@@ -347,6 +423,9 @@ UserRouter.post("/signin", (0, express_validator_1.check)("email", "Please inclu
             console.log(isMatch);
             return res.status(400).json({ error: "Incorrect password" });
         }
+        if (!user.verified) {
+            return res.status(400).json({ error: "Unverified member" });
+        }
         const payload = {
             user: {
                 email: user.email,
@@ -356,7 +435,7 @@ UserRouter.post("/signin", (0, express_validator_1.check)("email", "Please inclu
             if (err)
                 throw err;
             return res.json({
-                authToken: token
+                authToken: token,
             });
         });
     }
