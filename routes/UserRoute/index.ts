@@ -116,11 +116,9 @@ UserRouter.post(
             <div style="display: flex; justify-content: center;">
               <h1 style="font-size: 20px; font-weight: bold; margin-top: 20px">Email Verification</h1>
             </div>
-            <p>We received your request to reset your account password.</p>
-            <p>Click the link below to create your new password. Your password will not be reset if no action is taken and your
-              old password will continue to work</p>
+            <p>You have created an account on our system. Please verify your account by clicking the link below. You must verify the email address to use your account.</p>
             <div style="display: flex; justify-content: center;">
-              <a href="https://poc-fullstack-frontend.vercel.app/verify/${tokenMail}" target="_blank">Verify</a>
+              <a href="https://poc-fullstack-frontend.vercel.app/verify/${tokenMail}" target="_blank">Email Verification</a>
             </div>
           </div>
           
@@ -133,7 +131,6 @@ UserRouter.post(
             a:visited {
               background-color: #008800;
               margin-top: 30px;
-              width: 70px;
               color: white;
               padding: 14px 25px;
               text-align: center;
@@ -208,13 +205,13 @@ UserRouter.post(
   }
 );
 
-// @route    GET api/users/verity/:token
+// @route    POST api/users/verity
 // @desc     Is user verified
 // @access   Public
-UserRouter.get("/verify/:token", async (req, res) => {
-  console.log("verify token-", req.params);
+UserRouter.post("/verify", async (req, res) => {
+  console.log("verify token-", req.body);
   try {
-    const { token } = req.params;
+    const { token } = req.body;
     console.log(token);
 
     // Verifying the JWT token
@@ -225,11 +222,21 @@ UserRouter.get("/verify/:token", async (req, res) => {
           .status(400)
           .json({ success: false, error: "Email verification failed!" });
       } else {
-        // User.findOneAndUpdate({email: req.body.email}, {$set: {email: req.body.email, password: hashedPassword, username: req.body.username, verified: true}}, {new: true});
-        return res.json({
-          success: true,
-          mail: "Email verification successed!",
-        });
+        User.findOneAndUpdate(
+          {email: req.body.email}, 
+          {$set: {verified: true}}, 
+          {new: true}
+        )
+          .then(response => {
+            return res.json({
+              success: true,
+              mail: "Email verification successed!",
+            });
+          })
+          .catch(error => {
+            console.log(error);
+            return res.status(400).json({ success: false, error: "Email verification failed!" });
+          })
       }
     });
   } catch (error: any) {
@@ -284,7 +291,7 @@ UserRouter.post("/forgotPassword", async (req, res) => {
             subject: "Reset Password",
 
             // This would be the text of email body
-            text: `<!doctype html>
+            html: `<!doctype html>
             <html>
             
             <head>
@@ -294,12 +301,12 @@ UserRouter.post("/forgotPassword", async (req, res) => {
             <body style="font-family: sans-serif;">
               <div style="display: block; margin: auto; max-width: 600px;" class="main">
                 <div style="display: flex; justify-content: center;">
-                  <h1 style="font-size: 20px; font-weight: bold; margin-top: 20px">Email Verification</h1>
+                  <h1 style="font-size: 20px; font-weight: bold; margin-top: 20px">Reset Password</h1>
                 </div>
-                <p>You have created an account on our system. Please verify your account by clicking the button below. You must
-                  verify the email address to use your account.</p>
+                <p>We received your request to reset your account password.</p>
+                <p>Click the button below to create your new password. Your password will not be reset if no action is taken and your old password will continue to work</p>
                 <div style="display: flex; justify-content: center;">
-                  <a href="https://4a29-45-8-22-59.ngrok-free.app/${email}/reset-password/${tokenMail}" target="_blank">Verify</a>
+                  <a href="https://poc-fullstack-frontend.vercel.app/${email}/reset-password/${tokenMail}" target="_blank">Reset Password</a>
                 </div>
               </div>
               
@@ -312,7 +319,6 @@ UserRouter.post("/forgotPassword", async (req, res) => {
                 a:visited {
                   background-color: #008800;
                   margin-top: 30px;
-                  width: 70px;
                   color: white;
                   padding: 14px 25px;
                   text-align: center;
@@ -394,6 +400,8 @@ UserRouter.post("/resetPassword", async (req, res) => {
                         .status(400)
                         .json({ error: "Incorrect password" });
                     } else {
+                      console.log('new pass ===> ', hashedPassword);
+                      console.log('origin pass ===> ', data.password);
                       User.findOneAndUpdate(
                         { email: email },
                         {
@@ -463,6 +471,11 @@ UserRouter.post(
 
       const isMatch = await bcrypt.compare(password, user.password);
 
+      // const salt = await bcrypt.genSalt(10);
+      // const hashedPassword = await bcrypt.hash(password, salt);
+      // console.log('real pass ===> ', user.password);
+      // console.log('input pass ===> ', hashedPassword);
+
       if (!isMatch) {
         console.log(isMatch);
         return res.status(400).json({ error: "Incorrect password" });
@@ -475,6 +488,9 @@ UserRouter.post(
       const payload = {
         user: {
           email: user.email,
+          verified: user.verified,
+          username: user.username,
+          remember: checked,
         },
       };
 
