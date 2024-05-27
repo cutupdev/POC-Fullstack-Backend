@@ -15,13 +15,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const FileModel_1 = __importDefault(require("../../model/FileModel"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const middleware_1 = require("../../middleware");
 dotenv_1.default.config();
 // Create a new instance of the Express Router
 const FileRouter = (0, express_1.Router)();
 // @route    POST api/files/newUpload
 // @desc     Upload new data
 // @access   Public
-FileRouter.post("/newUpload", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+FileRouter.post("/newUpload", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(req.body);
     try {
         console.log("File inf saving started ===> ", req.body);
         const file = new FileModel_1.default({

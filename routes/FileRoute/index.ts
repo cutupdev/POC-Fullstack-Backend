@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import File from "../../model/FileModel";
 import dotenv from "dotenv";
+import { AuthRequest, authMiddleware } from "../../middleware";
 
 dotenv.config();
 
@@ -12,7 +13,9 @@ const FileRouter = Router();
 // @access   Public
 FileRouter.post(
   "/newUpload",
-  async (req: Request, res: Response) => {
+  authMiddleware,
+  async (req: AuthRequest, res: Response) => {
+    console.log(req.body);
     try {
       console.log("File inf saving started ===> ", req.body);
       const file = new File({
