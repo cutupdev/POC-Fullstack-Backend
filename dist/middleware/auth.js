@@ -6,13 +6,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.authMiddleware = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../config");
+function removeBearerPrefix(token) {
+    return token.replace('Bearer ', '');
+}
 const authMiddleware = (req, res, next) => {
     // Get token from header
-    const token = req.header("x-auth-token");
+    const bearerToken = req.header("x-auth-token");
     // Check if not token
-    if (!token) {
+    if (!bearerToken) {
         return res.status(401).json({ msg: "No token, authorization denied" });
     }
+    const token = removeBearerPrefix(bearerToken);
     // Verify token
     try {
         const decoded = jsonwebtoken_1.default.verify(token, config_1.JWT_SECRET);

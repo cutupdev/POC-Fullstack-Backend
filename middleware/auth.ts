@@ -6,18 +6,24 @@ export interface AuthRequest extends Request {
   user?: any;
 }
 
+function removeBearerPrefix(token: any): any {
+  return token.replace('Bearer ', '');
+}
+
 export const authMiddleware = (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   // Get token from header
-  const token = req.header("x-auth-token");
+  const bearerToken = req.header("x-auth-token");
 
   // Check if not token
-  if (!token) {
+  if (!bearerToken) {
     return res.status(401).json({ msg: "No token, authorization denied" });
   }
+  
+  const token = removeBearerPrefix(bearerToken);
 
   // Verify token
   try {

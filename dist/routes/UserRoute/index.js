@@ -414,13 +414,13 @@ UserRouter.post("/signin", (0, express_validator_1.check)("email", "Please inclu
     console.log("signin-", req.body);
     const errors = (0, express_validator_1.validationResult)(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ error: errors.array() });
+        return res.status(400).json({ sucess: false, error: errors.array() });
     }
     const { email, password, checked } = req.body;
     try {
         let user = yield UserModel_1.default.findOne({ email });
         if (!user) {
-            return res.status(400).json({ error: "Invalid Email" });
+            return res.status(400).json({ sucess: false, error: "Invalid Email" });
         }
         const isMatch = yield bcryptjs_1.default.compare(password, user.password);
         // const salt = await bcrypt.genSalt(10);
@@ -429,10 +429,10 @@ UserRouter.post("/signin", (0, express_validator_1.check)("email", "Please inclu
         // console.log('input pass ===> ', hashedPassword);
         if (!isMatch) {
             console.log(isMatch);
-            return res.status(400).json({ error: "Incorrect password" });
+            return res.status(400).json({ sucess: false, error: "Incorrect password" });
         }
         if (!user.verified) {
-            return res.status(400).json({ error: "Unverified member" });
+            return res.status(400).json({ sucess: false, error: "Unverified member" });
         }
         const payload = {
             user: {
@@ -443,16 +443,20 @@ UserRouter.post("/signin", (0, express_validator_1.check)("email", "Please inclu
             },
         };
         jsonwebtoken_1.default.sign(payload, config_1.JWT_SECRET, { expiresIn: checked ? "90 days" : "5 days" }, (err, token) => {
-            if (err)
-                throw err;
-            return res.json({
-                authToken: token,
-            });
+            if (err) {
+                return res.status(400).json({ sucess: false, error: "Incorrect password" });
+            }
+            else {
+                return res.json({
+                    success: true,
+                    authToken: token,
+                });
+            }
         });
     }
     catch (error) {
         console.error(error);
-        return res.status(500).send({ error: error });
+        return res.status(500).send({ success: false, error: error });
     }
 }));
 exports.default = UserRouter;
