@@ -109,7 +109,7 @@ UserRouter.post("/signup", (0, express_validator_1.check)("username", "Username 
             </div>
             <p>You have created an account on our system. Please verify your account by clicking the link below. You must verify the email address to use your account.</p>
             <div style="display: flex; justify-content: center;">
-              <a href="https://poc-fullstack-frontend.vercel.app/verify/${tokenMail}" target="_blank">Email Verification</a>
+              <a href="https://poc-fullstack-frontend.vercel.app/${req.body.email}/verify/${tokenMail}" target="_blank">Email Verification</a>
             </div>
           </div>
           
@@ -186,7 +186,7 @@ UserRouter.post("/signup", (0, express_validator_1.check)("username", "Username 
         return res.status(500).send({ error });
     }
 }));
-// @route    POST api/users/verity
+// @route    POST api/users/verify
 // @desc     Is user verified
 // @access   Public
 UserRouter.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -198,6 +198,7 @@ UserRouter.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, funct
         jsonwebtoken_1.default.verify(token, "ourSecretKey", (err, decode) => {
             if (err) {
                 console.log(err);
+                console.log("1111111");
                 return res
                     .status(400)
                     .json({ success: false, error: "Email verification failed!" });
@@ -205,12 +206,14 @@ UserRouter.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, funct
             else {
                 UserModel_1.default.findOneAndUpdate({ email: req.body.email }, { $set: { verified: true } }, { new: true })
                     .then(response => {
+                    console.log("1111111");
                     return res.json({
                         success: true,
                         mail: "Email verification successed!",
                     });
                 })
                     .catch(error => {
+                    console.log("1111111");
                     console.log(error);
                     return res.status(400).json({ success: false, error: "Email verification failed!" });
                 });
@@ -218,6 +221,7 @@ UserRouter.post("/verify", (req, res) => __awaiter(void 0, void 0, void 0, funct
         });
     }
     catch (error) {
+        console.log("1111111");
         console.error(error);
         return res.status(500).send({ error });
     }
