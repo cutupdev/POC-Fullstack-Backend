@@ -6,6 +6,7 @@
  */
 import mongoose from "mongoose";
 import { MONGO_URL } from "./config";
+import { defaultLogger, authLogger, errorLogger, logLogger } from "../utils/logger";
 
 /**
  * Establishes a connection to the MongoDB database.
@@ -21,13 +22,15 @@ export const connectMongoDB = async () => {
     try {
       if (MONGO_URL) {
         const connection = await mongoose.connect(MONGO_URL);
-        console.log(`MONGODB CONNECTED : ${connection.connection.host}`);
+        logLogger.debug(`MONGODB CONNECTED : ${connection.connection.host}`);
+        defaultLogger.debug(`MONGODB CONNECTED : ${connection.connection.host}`);
         isConnected = true;
       } else {
-        console.log("No Mongo URL");
+        logLogger.debug("No Mongo URL");
+        defaultLogger.debug("No Mongo URL");
       }
     } catch (error) {
-      console.log(`Error : ${(error as Error).message}`);
+      errorLogger.error(`Error : ${(error as Error).message}`)
       isConnected = false;
       // Attempt to reconnect
       setTimeout(connect, 1000); // Retry connection after 1 seconds
@@ -37,14 +40,16 @@ export const connectMongoDB = async () => {
   connect();
 
   mongoose.connection.on("disconnected", () => {
-    console.log("MONGODB DISCONNECTED");
+    logLogger.debug("MONGODB DISCONNECTED");
+    defaultLogger.debug("MONGODB DISCONNECTED");
     isConnected = false;
     // Attempt to reconnect
-    setTimeout(connect, 1000); // Retry connection after 5 seconds
+    setTimeout(connect, 5000); // Retry connection after 5 seconds
   });
 
   mongoose.connection.on("reconnected", () => {
-    console.log("MONGODB RECONNECTED");
+    logLogger.debug("MONGODB RECONNECTED");
+    defaultLogger.debug("MONGODB RECONNECTED");
     isConnected = true;
   });
 };

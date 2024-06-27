@@ -11,7 +11,7 @@ function removeBearerPrefix(token) {
 }
 const authMiddleware = (req, res, next) => {
     // Get token from header
-    const bearerToken = req.header("x-auth-token");
+    const bearerToken = req.header("Authorization");
     // Check if not token
     if (!bearerToken) {
         return res.status(401).json({ msg: "No token, authorization denied" });

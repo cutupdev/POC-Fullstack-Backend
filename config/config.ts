@@ -1,10 +1,11 @@
+import { errorLogger } from "../utils/logger";
 import dotenv from "dotenv";
 dotenv.config();
 
 try {
   dotenv.config();
 } catch (error) {
-  console.error("Error loading environment variables:", error);
+  errorLogger.error("Error loading environment variables:", error);
   process.exit(1);
 }
 

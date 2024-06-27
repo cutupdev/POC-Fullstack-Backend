@@ -1,0 +1,1 @@
+export const frontUrl = 'http://34.204.232.95:3000'

@@ -3,10 +3,10 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import path from 'path';
-
+import { logLogger, defaultLogger } from "./utils/logger";
 import { PORT, connectMongoDB } from "./config";
 import http from "http";
-import { UserRouter, FileRouter } from "./routes";
+import { UserRouter, FileRouter, CategoryRouter } from "./routes";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -34,6 +34,7 @@ const server = http.createServer(app);
 // Define routes for different API endpoints
 app.use("/api/users", UserRouter);
 app.use("/api/files", FileRouter);
+app.use("/api/category", CategoryRouter);
 
 // Define a route to check if the backend server is running
 app.get("/", async (req: any, res: any) => {
@@ -42,5 +43,6 @@ app.get("/", async (req: any, res: any) => {
 
 // Start the Express server to listen on the specified port
 server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  logLogger.debug(`Server is running on port ${PORT}`);
+  defaultLogger.debug(`Server is running on port ${PORT}`);
 });

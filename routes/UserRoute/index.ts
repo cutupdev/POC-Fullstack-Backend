@@ -1,15 +1,15 @@
 import { Request, Response, Router } from "express";
 import { check, validationResult } from "express-validator";
 import nodemailer from "nodemailer";
-import axios from "axios";
-import { encode, decode } from "js-base64";
-import { Error } from "mongoose";
+import { decode } from "js-base64";
 import bcrypt, { hash } from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../../model/UserModel";
 import { authMiddleware, AuthRequest } from "../../middleware";
 import { JWT_SECRET } from "../../config";
 import dotenv from "dotenv";
+import { frontUrl } from "../../utils/api";
+import { defaultLogger, authLogger, errorLogger, logLogger } from "../../utils/logger";
 
 dotenv.config();
 
@@ -33,10 +33,9 @@ UserRouter.get("/", authMiddleware, async (req: AuthRequest, res: Response) => {
       "-role",
       "-referrerlId",
     ]);
-
     res.json(user);
   } catch (err: any) {
-    console.error(err.message);
+    errorLogger.error('Error during authentication, ', err.message);
     return res.status(500).send({ error: err });
   }
 });
@@ -50,7 +49,7 @@ UserRouter.get("/username", async (req, res) => {
     const isValid = await validateUsername(username as string);
     return res.json({ isValid });
   } catch (error: any) {
-    console.error(error);
+    errorLogger.error('Error during username validation, ', error);
     return res.status(500).send({ error });
   }
 });
@@ -67,7 +66,6 @@ UserRouter.post(
     "Please enter a password with 12 or more characters"
   ).isLength({ min: 12 }),
   async (req: Request, res: Response) => {
-    console.log("signup-", req.body);
     try {
       const transporter = nodemailer.createTransport({
         service: process.env.EMAIL_SERVICE,
@@ -118,7 +116,7 @@ UserRouter.post(
             </div>
             <p>You have created an account on our system. Please verify your account by clicking the link below. You must verify the email address to use your account.</p>
             <div style="display: flex; justify-content: center;">
-              <a href="https://poc-fullstack-frontend.vercel.app/${req.body.email}/verify/${tokenMail}" target="_blank">Email Verification</a>
+              <a href="${frontUrl}/${req.body.email}/verify/${tokenMail}" target="_blank">Email Verification</a>
             </div>
           </div>
           
@@ -184,22 +182,21 @@ UserRouter.post(
             mailConfigurations,
             function (error: any, info: any) {
               if (error) {
-                console.log(error);
+                errorLogger.error('Error when sending email, ', error);
                 return res.json({ success: false, mail: "Can't send email!" });
               } else {
-                console.log("Email Sent Successfully");
-                console.log(info);
+                logLogger.debug("Email Sent Successfully");
                 return res.json({ success: true });
               }
             }
           );
         })
         .catch((err) => {
-          console.log(err);
+          errorLogger.error('Error when user signing up, ', err);
           return res.json({ success: false, mail: "Can't regist user!" });
         });
     } catch (error: any) {
-      console.error(error);
+      errorLogger.error('Error when user signing up, ', error);
       return res.status(500).send({ error });
     }
   }
@@ -209,42 +206,37 @@ UserRouter.post(
 // @desc     Is user verified
 // @access   Public
 UserRouter.post("/verify", async (req, res) => {
-  console.log("verify token-", req.body);
   try {
     const { token } = req.body;
-    console.log(token);
 
     // Verifying the JWT token
     jwt.verify(token, "ourSecretKey", (err: any, decode: any) => {
       if (err) {
-        console.log(err);
-        console.log("1111111");
+        errorLogger.error('Error during jwt verification, ', err);
         return res
           .status(400)
           .json({ success: false, error: "Email verification failed!" });
       } else {
         User.findOneAndUpdate(
-          {email: req.body.email}, 
-          {$set: {verified: true}}, 
-          {new: true}
+          { email: req.body.email },
+          { $set: { verified: true } },
+          { new: true }
         )
           .then(response => {
-            console.log("1111111");
+            logLogger.debug('User verified successfully');
             return res.json({
               success: true,
               mail: "Email verification successed!",
             });
           })
           .catch(error => {
-            console.log("1111111");
-            console.log(error);
+            errorLogger.error('User verification failed');
             return res.status(400).json({ success: false, error: "Email verification failed!" });
           })
       }
     });
   } catch (error: any) {
-    console.log("1111111");
-    console.error(error);
+    errorLogger.error('Error during jwt verification, ', error);
     return res.status(500).send({ error });
   }
 });
@@ -253,7 +245,6 @@ UserRouter.post("/verify", async (req, res) => {
 // @desc     Is user verified
 // @access   Public
 UserRouter.post("/forgotPassword", async (req, res) => {
-  console.log("forget password-", req.body);
   try {
     const email = req.body.email;
 
@@ -310,7 +301,7 @@ UserRouter.post("/forgotPassword", async (req, res) => {
                 <p>We received your request to reset your account password.</p>
                 <p>Click the button below to create your new password. Your password will not be reset if no action is taken and your old password will continue to work</p>
                 <div style="display: flex; justify-content: center;">
-                  <a href="https://poc-fullstack-frontend.vercel.app/${email}/reset-password/${tokenMail}" target="_blank">Reset Password</a>
+                  <a href="${frontUrl}/${email}/reset-password/${tokenMail}" target="_blank">Reset Password</a>
                 </div>
               </div>
               
@@ -344,11 +335,10 @@ UserRouter.post("/forgotPassword", async (req, res) => {
             mailConfigurations,
             function (error: any, info: any) {
               if (error) {
-                console.log(error);
+                errorLogger.error('Error when sending message, ', error);
                 return res.json({ success: false, mail: "Can't send email!" });
               } else {
-                console.log("Email Sent Successfully");
-                console.log(info);
+                logLogger.debug("Email Sent Successfully");
                 return res.json({
                   success: true,
                   mail: "Email verification link sent!",
@@ -361,11 +351,11 @@ UserRouter.post("/forgotPassword", async (req, res) => {
         }
       })
       .catch((err) => {
-        console.log(err);
+        errorLogger.error("Can't find corect user");
         return res.json({ success: false, mail: "Can't find user!" });
       });
   } catch (error: any) {
-    console.error(error);
+    errorLogger.error('Error when sending message, ', error);
     return res.status(500).send({ error });
   }
 });
@@ -374,78 +364,57 @@ UserRouter.post("/forgotPassword", async (req, res) => {
 // @desc     Is user verified
 // @access   Public
 UserRouter.post("/resetPassword", async (req, res) => {
-  console.log("reset password-", req.body);
   try {
     const email = req.body.email;
     const token = req.body.token;
     const newPassword = req.body.password;
 
-    User.findOne({ email: email })
-      .then((data) => {
-        if (data) {
-          jwt.verify(token, "ourSecretKey", (err: any, decode: any) => {
-            if (err) {
-              console.log(err);
-              return res.status(400).json({
-                success: false,
-                error:
-                  "Reset password failed because email verification failure!",
-              });
-            } else {
-              bcrypt.genSalt(10, (err, salt) => {
-                if (err) {
-                  console.error("Error generating salt:", err);
-                  return res.status(400).json({ error: "Incorrect password" });
-                } else {
-                  bcrypt.hash(newPassword, salt, (err, hashedPassword) => {
-                    if (err) {
-                      console.error("Error hashing password:", err);
-                      return res
-                        .status(400)
-                        .json({ error: "Incorrect password" });
-                    } else {
-                      console.log('new pass ===> ', hashedPassword);
-                      console.log('origin pass ===> ', data.password);
-                      User.findOneAndUpdate(
-                        { email: email },
-                        {
-                          $set: {
-                            email: email,
-                            password: hashedPassword,
-                            username: data.username,
-                            verified: true,
-                          },
-                        },
-                        { new: true }
-                      )
-                        .then((data) => {
-                          return res.json({
-                            success: true,
-                            mail: "Reset password successed!",
-                          });
-                        })
-                        .catch((errors) => {
-                          console.log(errors);
-                          return res
-                            .status(400)
-                            .json({ error: "Reset password failed!" });
-                        });
-                    }
-                  });
-                }
-              });
-            }
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    const data = await User.findOne({ email: email });
+
+    if (!data) {
+      return res.json({ success: false, mail: "Can't find user!" });
+    }
+
+    jwt.verify(token, "ourSecretKey", (err: any, decode: any) => {
+      if (err) {
+        errorLogger.error('Error during jwt verification, ', err);
+        return res.status(400).json({
+          success: false,
+          error:
+            "Reset password failed because email verification failure!",
+        });
+      } else {
+        User.findOneAndUpdate(
+          { email: email },
+          {
+            $set: {
+              email: email,
+              password: hashedPassword,
+              username: data.username,
+              verified: true,
+            },
+          },
+          { new: true }
+        )
+          .then((data) => {
+            return res.json({
+              success: true,
+              mail: "Reset password successed!",
+            });
+          })
+          .catch((errors) => {
+            errorLogger.error('Error when updating password, ', errors);
+            return res
+              .status(400)
+              .json({ error: "Reset password failed!" });
           });
-        } else {
-          return res.json({ success: false, mail: "Can't find email!" });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        return res.json({ success: false, mail: "Can't find user!" });
-      });
+      }
+    });
   } catch (error: any) {
-    console.error(error);
+    errorLogger.error('Reset password error, ', error);
     return res.status(500).send({ error });
   }
 });
@@ -458,7 +427,6 @@ UserRouter.post(
   check("email", "Please include a valid email").isEmail(),
   check("password", "Password is required").exists(),
   async (req, res) => {
-    console.log("signin-", req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ sucess: false, error: errors.array() });
@@ -467,54 +435,145 @@ UserRouter.post(
     const { email, password, checked } = req.body;
 
     try {
-      let user = await User.findOne({ email });
 
-      if (!user) {
-        return res.status(400).json({ sucess: false, error: "Invalid Email" });
-      }
-
-      const isMatch = await bcrypt.compare(password, user.password);
-
-      // const salt = await bcrypt.genSalt(10);
-      // const hashedPassword = await bcrypt.hash(password, salt);
-      // console.log('real pass ===> ', user.password);
-      // console.log('input pass ===> ', hashedPassword);
-
-      if (!isMatch) {
-        console.log(isMatch);
-        return res.status(400).json({ sucess: false, error: "Incorrect password" });
-      }
-
-      if (!user.verified) {
-        return res.status(400).json({ sucess: false, error: "Unverified member" });
-      }
-
-      const payload = {
-        user: {
-          email: user.email,
-          verified: user.verified,
-          username: user.username,
-          remember: checked,
-        },
-      };
-
-      jwt.sign(
-        payload,
-        JWT_SECRET,
-        { expiresIn: checked ? "90 days" : "5 days" },
-        (err, token) => {
-          if (err)  {
-            return res.status(400).json({ sucess: false, error: "Incorrect password" });
-          } else {
-            return res.json({
-              success: true,
-              authToken: token,
-            });
-          }
+      try {
+        let user = await User.findOne({ email });
+        if (!user) {
+          return res.status(400).json({ sucess: false, error: "Invalid Email" });
         }
-      );
+
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+          errorLogger.error('Incorrect password');
+          return res.status(400).json({ sucess: false, error: "Incorrect password" });
+        }
+
+        if (!user.verified) {
+          return res.status(400).json({ sucess: false, error: "Unverified member" });
+        }
+
+        authLogger.info('User login --> ', "email: ", user.email, ", username: ", user.username, ', IP address: ', req.socket.localAddress);
+
+        const payload = {
+          user: {
+            email: user.email,
+            verified: user.verified,
+            username: user.username,
+            role: user.role,
+            remember: checked,
+          },
+        };
+
+        jwt.sign(
+          payload,
+          JWT_SECRET,
+          { expiresIn: checked ? "90 days" : "5 days" },
+          (err, token) => {
+            if (err) {
+              return res.status(400).json({ sucess: false, error: "Incorrect password" });
+            } else {
+              return res.json({
+                success: true,
+                authToken: token,
+              });
+            }
+          }
+        );
+
+      } catch (error: any) {
+        errorLogger.error('Error fetching user, ', error);
+
+        if (error.name === 'CastError') {
+          return res.status(400).json({ success: false, message: "Invalid user ID format", details: error.message });
+        } else if (error.name === 'ValidationError') {
+          return res.status(400).json({ success: false, message: "Validation Error", details: error.errors });
+        } else if (error.name === 'MongoError') {
+          return res.status(500).json({ success: false, message: "Database Error", details: error.message });
+        } else {
+          return res.status(500).json({ success: false, message: "Unknown Error", details: error.message });
+        }
+      }
+
     } catch (error: any) {
-      console.error(error);
+      errorLogger.error('Sign in error, ', error);
+      return res.status(500).send({ success: false, error: error });
+    }
+  }
+);
+
+// @route    POST api/users/profile
+// @desc     Modify user profile
+// @access   Private
+UserRouter.post(
+  "/profile",
+  check("email", "Please include a valid email").isEmail(),
+  check("name", "Name is required").exists(),
+  authMiddleware,
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ sucess: false, error: errors.array() });
+    }
+
+    const { email, name, checked } = req.body;
+
+    try {
+
+      try {
+
+        let user = await User.findOneAndUpdate(
+          { email: email },
+          { $set: { username: name } },
+          { new: true }
+        )
+        
+        if (!user) {
+          return res.status(400).json({ sucess: false, error: "Invalid Email" });
+        }
+
+        const payload = {
+          user: {
+            email: user.email,
+            verified: user.verified,
+            username: user.username,
+            remember: checked,
+            role: user.role
+          },
+        };
+
+        jwt.sign(
+          payload,
+          JWT_SECRET,
+          { expiresIn: checked ? "90 days" : "5 days" },
+          (err, token) => {
+            if (err) {
+              return res.status(400).json({ sucess: false, error: "Incorrect password" });
+            } else {
+              return res.json({
+                success: true,
+                authToken: token,
+              });
+            }
+          }
+        );
+        
+      } catch (error: any) {
+        errorLogger.error('Error fetching user, ', error);
+
+        if (error.name === 'CastError') {
+          return res.status(400).json({ success: false, message: "Invalid user ID format", details: error.message });
+        } else if (error.name === 'ValidationError') {
+          return res.status(400).json({ success: false, message: "Validation Error", details: error.errors });
+        } else if (error.name === 'MongoError') {
+          return res.status(500).json({ success: false, message: "Database Error", details: error.message });
+        } else {
+          return res.status(500).json({ success: false, message: "Unknown Error", details: error.message });
+        }
+      }
+
+    } catch (error: any) {
+      errorLogger.error('Profile edit error, ', error);
       return res.status(500).send({ success: false, error: error });
     }
   }
