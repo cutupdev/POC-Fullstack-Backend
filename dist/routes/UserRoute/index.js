@@ -240,7 +240,7 @@ UserRouter.post("/forgotPassword", (req, res) => __awaiter(void 0, void 0, void 
                     service: process.env.EMAIL_SERVICE,
                     auth: {
                         user: process.env.EMAIL_USER,
-                        pass: process.env.EMAIL_PASS,
+                        pass: .EMAIL_PASS,
                     },
                 });
                 // Provide a secret key type, it can generally be a string or a buffer
